@@ -2,7 +2,7 @@
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
-local SCRIPT_URL = "https://raw.githubusercontent.com/choalne02-dotcom/StealAUGC/refs/heads/main/StealA_UGC"
+local SCRIPT_URL = "https://raw.githubusercontent.com/choalne02-dotcom/StealAUGC/refs/heads/main/rejoinScriptByQuang"
 
 -- 1. Hỗ trợ nhiều loại Executor khác nhau cho QueueOnTeleport
 local queue_teleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
