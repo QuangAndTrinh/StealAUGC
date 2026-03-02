@@ -34,21 +34,6 @@ GuiService.ErrorMessageChanged:Connect(function()
     TeleportService:Teleport(game.PlaceId, lp)
 end)
 
--- 4. Anti-Kick (Sử dụng Hookmetamethod để tránh đơ UI/Chuột)
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-    
-    if not checkcaller() and (method == "Kick" or method == "kick") then
-        task.spawn(function()
-            TeleportService:Teleport(game.PlaceId, lp)
-        end)
-        return nil -- Chặn lệnh kick từ server
-    end
-    return oldNamecall(self, unpack(args))
-end)
-
 -- 5. Hàm tạo UI thông báo (Đã sửa lỗi chặn chuột)
 local function ShowStatus(text)
     if CoreGui:FindFirstChild("NotifyStatus") then
