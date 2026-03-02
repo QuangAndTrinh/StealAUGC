@@ -1,6 +1,6 @@
 --[[
-    --===[ QueueOnTeleport Loader + Anti-Kick + UI (Optimized) ]===--
-    Tính năng: Tối ưu hóa phản hồi UI, Chống văng, Chống AFK, Chống Kick an toàn.
+    --===[ Full Clean UI + Anti-Kick + Badge Notify ]===--
+    Xóa sạch thông báo giữa màn hình, chỉ giữ Badge góc dưới phải.
 ]]
 
 local TeleportService = game:GetService("TeleportService")
@@ -8,51 +8,30 @@ local Players = game:GetService("Players")
 local GuiService = game:GetService("GuiService")
 local VirtualUser = game:GetService("VirtualUser")
 local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
 
 local lp = Players.LocalPlayer
 local SCRIPT_URL = "https://raw.githubusercontent.com/choalne02-dotcom/StealAUGC/refs/heads/main/rejoinScriptByQuang"
 
--- 1. Hỗ trợ QueueOnTeleport (An toàn)
-local queue_teleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
-if queue_teleport then
-    pcall(function()
-        queue_teleport("loadstring(game:HttpGet('"..SCRIPT_URL.."'))()")
-    end)
-end
 
--- 2. Anti-AFK (Giữ nguyên logic cũ)
-if lp then
-    lp.Idled:Connect(function()
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new())
-    end)
-end
 
--- 3. Chống văng game (Tự Reconnect)
-GuiService.ErrorMessageChanged:Connect(function()
-    task.wait()
-    TeleportService:Teleport(game.PlaceId, lp)
-end)
-
--- 5. Hàm tạo UI thông báo (Đã sửa lỗi chặn chuột)
-local function ShowStatus(text)
-    if CoreGui:FindFirstChild("NotifyStatus") then
-        CoreGui.NotifyStatus:Destroy()
-    end
-
+----------------------------------------------------------------
+-- 2. HÀM TẠO THÔNG BÁO BADGE (CHỈ GÓC DƯỚI PHẢI)
+----------------------------------------------------------------
+local function ShowBadgeStatus(titleText, descText)
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "NotifyStatus"
+    screenGui.Name = "BadgeNotify"
     screenGui.Parent = CoreGui
+    screenGui.DisplayOrder = 999
     screenGui.IgnoreGuiInset = true
-    screenGui.DisplayOrder = 999 -- Luôn nằm trên cùng
 
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 300, 0, 60)
-    mainFrame.Position = UDim2.new(0.5, -150, 0.5, -30)
+    mainFrame.Size = UDim2.new(0, 300, 0, 75)
+    mainFrame.Position = UDim2.new(1, 20, 1, -100) -- Vị trí ẩn bên phải
     mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    mainFrame.BackgroundTransparency = 0.2
+    mainFrame.BackgroundTransparency = 0.15
     mainFrame.BorderSizePixel = 0
-    mainFrame.Active = false -- QUAN TRỌNG: Không chặn chuột
+    mainFrame.Active = false -- Không chặn chuột
     mainFrame.Parent = screenGui
 
     local corner = Instance.new("UICorner")
@@ -61,40 +40,79 @@ local function ShowStatus(text)
 
     local stroke = Instance.new("UIStroke")
     stroke.Color = Color3.fromRGB(0, 170, 255)
-    stroke.Thickness = 2
+    stroke.Thickness = 1.5
     stroke.Parent = mainFrame
 
+    local icon = Instance.new("ImageLabel")
+    icon.Size = UDim2.new(0, 48, 0, 48)
+    icon.Position = UDim2.new(0, 12, 0.5, -24)
+    icon.BackgroundTransparency = 1
+    icon.Image = "rbxassetid://6023426926"
+    icon.ImageColor3 = Color3.fromRGB(0, 170, 255)
+    icon.Parent = mainFrame
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -80, 0, 20)
+    title.Position = UDim2.new(0, 72, 0, 15)
+    title.BackgroundTransparency = 1
+    title.Text = titleText:upper()
+    title.TextColor3 = Color3.fromRGB(180, 180, 180)
+    title.TextSize = 12
+    title.Font = Enum.Font.GothamBold
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = mainFrame
+
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Size = UDim2.new(1, -80, 0, 30)
+    label.Position = UDim2.new(0, 72, 0, 32)
     label.BackgroundTransparency = 1
-    label.Text = text
+    label.Text = descText
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 18
-    label.Font = Enum.Font.GothamBold
-    label.Active = false -- QUAN TRỌNG: Không chặn chuột
+    label.TextSize = 14
+    label.Font = Enum.Font.GothamMedium
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextWrapped = true
     label.Parent = mainFrame
 
-    -- Hiệu ứng tắt dần sau 4 giây (Giữ nguyên yêu cầu)
+    -- Hiệu ứng trượt
+    TweenService:Create(mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = UDim2.new(1, -320, 1, -100)
+    }):Play()
+
     task.delay(4, function()
-        for i = 0.2, 1, 0.1 do
-            if not mainFrame then break end
-            mainFrame.BackgroundTransparency = i
-            label.TextTransparency = (i - 0.2) * 1.25
-            task.wait(0.05)
+        if mainFrame then
+            local t = TweenService:Create(mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+                Position = UDim2.new(1, 20, 1, -100)
+            })
+            t:Play()
+            t.Completed:Connect(function() screenGui:Destroy() end)
         end
-        if screenGui then screenGui:Destroy() end
     end)
 end
 
--- Kích hoạt thông báo
-ShowStatus("ĐÃ BẬT ANTI-KICK & REJOIN")
+-- Hiển thị Badge mới
+ShowBadgeStatus("Hệ Thống", "Đã dọn dẹp UI cũ và bật Anti-Kick.")
 
--- 6. Thực thi script chính (Dùng task.spawn để không làm treo code phía trên)
-task.spawn(function()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet(SCRIPT_URL))()
+----------------------------------------------------------------
+-- 3. LOGIC HỆ THỐNG
+----------------------------------------------------------------
+local queue_teleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+if queue_teleport then
+    pcall(function() queue_teleport("loadstring(game:HttpGet('"..SCRIPT_URL.."'))()") end)
+end
+
+if lp then
+    lp.Idled:Connect(function()
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
     end)
-    if not success then
-        warn("Lỗi khi tải script chính: " .. tostring(err))
-    end
+end
+
+GuiService.ErrorMessageChanged:Connect(function()
+    task.wait(0.5)
+    TeleportService:Teleport(game.PlaceId, lp)
+end)
+
+task.spawn(function()
+    pcall(function() loadstring(game:HttpGet(SCRIPT_URL))() end)
 end)
