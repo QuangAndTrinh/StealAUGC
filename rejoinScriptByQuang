@@ -1,39 +1,209 @@
---[[
-    --===[ Full Clean UI + Anti-Kick + Badge Notify ]===--
-    Xóa sạch thông báo giữa màn hình, chỉ giữ Badge góc dưới phải.
-]]
-
+local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local GuiService = game:GetService("GuiService")
 local VirtualUser = game:GetService("VirtualUser")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local lp = Players.LocalPlayer
-local SCRIPT_URL = "https://raw.githubusercontent.com/choalne02-dotcom/StealAUGC/refs/heads/main/rejoinScriptByQuang"
+local FILENAME = "S_Scripts_Config.json"
 
-pcall(function()
-    if QueueOnTeleport then
-        QueueOnTeleport("loadstring(game:HttpGet('"..SCRIPT_URL.."'))()")
+local function LoadConfig()
+    local default = {
+        AntiAFK = true,
+        AutoRejoin = true,
+        AutoJump = false,
+        AntiStuck = true,
+        TeleportLoop = false,
+        TeleportPoint = {x = 0, y = 100, z = 0},
+        TeleportDelay = 0.5,
+        Fly = false,
+        NoClip = false,
+        RejoinSource = "https://raw.githubusercontent.com/choalne02-dotcom/StealAUGC/refs/heads/main/rejoinScriptByQuang",
+        ExecuteThisScript = "https://pastefy.app/smxOpGnI/raw"
+    }
+    if isfile(FILENAME) then
+        local success, decoded = pcall(HttpService.JSONDecode, HttpService, readfile(FILENAME))
+        if success then 
+            for k, v in pairs(decoded) do default[k] = v end
+        end
+    end
+    getgenv().Config = default
+end
+
+local function SaveConfig()
+    writefile(FILENAME, HttpService:JSONEncode(getgenv().Config))
+end
+
+LoadConfig()
+
+local function CreateUI()
+    if CoreGui:FindFirstChild("S_ScriptUI") then CoreGui.S_ScriptUI:Destroy() end
+    
+    local sg = Instance.new("ScreenGui", CoreGui)
+    sg.Name = "S_ScriptUI"
+    
+    local main = Instance.new("Frame", sg)
+    main.Size = UDim2.new(0, 250, 0, 450)
+    main.Position = UDim2.new(0, 20, 0.5, -225)
+    main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    main.BorderSizePixel = 0
+    main.Active = true
+    main.Draggable = true
+
+    local scroll = Instance.new("ScrollingFrame", main)
+    scroll.Size = UDim2.new(1, -10, 1, -40)
+    scroll.Position = UDim2.new(0, 5, 0, 35)
+    scroll.BackgroundTransparency = 1
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
+    scroll.ScrollBarThickness = 4
+
+    local list = Instance.new("UIListLayout", scroll)
+    list.Padding = UDim.new(0, 5)
+
+    local function AddToggle(text, configKey)
+        local btn = Instance.new("TextButton", scroll)
+        btn.Size = UDim2.new(1, -10, 0, 30)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 12
+        local function UpdateBtn()
+            btn.Text = text .. ": " .. (getgenv().Config[configKey] and "ON" or "OFF")
+            btn.BackgroundColor3 = getgenv().Config[configKey] and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
+        end
+        btn.MouseButton1Click:Connect(function()
+            getgenv().Config[configKey] = not getgenv().Config[configKey]
+            SaveConfig()
+            UpdateBtn()
+        end)
+        UpdateBtn()
+    end
+
+    local function AddInput(label, configKey, isNumber)
+        local lab = Instance.new("TextLabel", scroll)
+        lab.Size = UDim2.new(1, -10, 0, 15)
+        lab.Text = label
+        lab.TextColor3 = Color3.fromRGB(200, 200, 200)
+        lab.BackgroundTransparency = 1
+        lab.TextSize = 10
+
+        local box = Instance.new("TextBox", scroll)
+        box.Size = UDim2.new(1, -10, 0, 30)
+        box.Text = tostring(getgenv().Config[configKey])
+        box.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        box.TextColor3 = Color3.fromRGB(255, 255, 255)
+        box.ClearTextOnFocus = false
+        
+        box.FocusLost:Connect(function()
+            local val = box.Text
+            if isNumber then val = tonumber(val) or getgenv().Config[configKey] end
+            getgenv().Config[configKey] = val
+            SaveConfig()
+        end)
+    end
+
+    -- Title
+    local t = Instance.new("TextLabel", main)
+    t.Size = UDim2.new(1, 0, 0, 30)
+    t.Text = "S-SCRIPTS MANAGER"
+    t.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    t.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    -- Controls
+    AddToggle("Anti AFK", "AntiAFK")
+    AddToggle("Auto Rejoin", "AutoRejoin")
+    AddToggle("Auto Jump", "AutoJump")
+    AddToggle("Anti Stuck", "AntiStuck")
+    AddToggle("Fly Mode", "Fly")
+    AddToggle("No Clip", "NoClip")
+    AddToggle("Teleport Loop", "TeleportLoop")
+    
+    AddInput("TP Delay (Seconds)", "TeleportDelay", true)
+    
+    local setPos = Instance.new("TextButton", scroll)
+    setPos.Size = UDim2.new(1, -10, 0, 30)
+    setPos.Text = "SAVE CURRENT POS AS TP"
+    setPos.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
+    setPos.MouseButton1Click:Connect(function()
+        local pos = lp.Character.HumanoidRootPart.Position
+        getgenv().Config.TeleportPoint = {x = pos.X, y = pos.Y, z = pos.Z}
+        SaveConfig()
+    end)
+
+    AddInput("Rejoin Script URL", "RejoinSource", false)
+    AddInput("Execute Script URL", "ExecuteThisScript", false)
+end
+
+CreateUI()
+
+-- LOGIC FUNCTIONS
+if getgenv().Config.AutoRejoin then
+    local queue_teleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+    if queue_teleport then
+        pcall(function() 
+            queue_teleport("loadstring(game:HttpGet('"..getgenv().Config.RejoinSource.."'))()")
+            queue_teleport("loadstring(game:HttpGet('"..getgenv().Config.ExecuteThisScript.."'))()")
+        end)
+    end
+    GuiService.ErrorMessageChanged:Connect(function()
+        task.wait(0.5)
+        TeleportService:Teleport(game.PlaceId, lp)
+    end)
+end
+
+lp.Idled:Connect(function()
+    if getgenv().Config.AntiAFK then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
     end
 end)
 
-----------------------------------------------------------------
--- 2. HÀM TẠO THÔNG BÁO BADGE (CHỈ GÓC DƯỚI PHẢI)
-----------------------------------------------------------------
-local function ShowBadgeStatus(titleText, descText)
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "BadgeNotify"
-    screenGui.Parent = CoreGui
-    screenGui.DisplayOrder = 999
-    screenGui.IgnoreGuiInset = true
+local function handleCharacterLogic()
+    local char = lp.Character
+    if char and char:FindFirstChildOfClass("Humanoid") then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local hrp = char:FindFirstChild("HumanoidRootPart")
 
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 300, 0, 75)
-    mainFrame.Position = UDim2.new(1, 20, 1, -100) -- Vị trí ẩn bên phải
-    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    mainFrame.BackgroundTransparency = 0.15
+        if getgenv().Config.AntiStuck and hum.Sit then hum.Jump = true end
+        if getgenv().Config.AutoJump and hum.FloorMaterial ~= Enum.Material.Air then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+        
+        if getgenv().Config.AntiStuck then
+            local state = hum:GetState()
+            if state == Enum.HumanoidStateType.FallingDown or state == Enum.HumanoidStateType.PlatformStanding then
+                hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+            end
+        end
+
+        if getgenv().Config.NoClip then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end
+
+        if getgenv().Config.Fly and hrp then
+            local v = hrp:FindFirstChild("S_Fly") or Instance.new("BodyVelocity", hrp)
+            v.Name = "S_Fly"
+            v.Velocity = Vector3.new(0, 0, 0)
+            v.MaxForce = Vector3.new(0, 9e9, 0)
+        elseif hrp and hrp:FindFirstChild("S_Fly") then
+            hrp.S_Fly:Destroy()
+        end
+    end
+end
+
+if _G.MainLoop then _G.MainLoop:Disconnect() end
+_G.MainLoop = RunService.RenderStepped:Connect(handleCharacterLogic)
+
+task.spawn(function()
+    while task.wait() do
+        if getgenv().Config.TeleportLoop and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            local p = getgenv().Config.TeleportPoint
+            lp.Character.HumanoidRootPart.CFrame = CFrame.new(p.x, p.y, p.z)
+            task.wait(getgenv().Config.TeleportDelay or 0.5)
+        end
+    end
+end)
     mainFrame.BorderSizePixel = 0
     mainFrame.Active = false -- Không chặn chuột
     mainFrame.Parent = screenGui
