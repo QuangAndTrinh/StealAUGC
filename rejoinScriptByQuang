@@ -10,7 +10,6 @@ local RunService = game:GetService("RunService")
 local lp = Players.LocalPlayer
 local FILENAME = "S_Scripts_Config.json"
 
--- Hàm kiểm tra môi trường executor (Delta/Fluxus/v.v)
 local is_file = isfile or function() return false end
 local read_file = readfile or function() return "" end
 local write_file = writefile or function() end
@@ -27,7 +26,7 @@ local function LoadConfig()
         Fly = false,
         NoClip = false,
         RejoinSource = "https://raw.githubusercontent.com/choalne02-dotcom/StealAUGC/refs/heads/main/rejoinScriptByQuang",
-        ExecuteThisScript = "https://pastefy.app/smxOpGnI/raw"
+        ExecuteThisScript = "" -- Để trống mặc định
     }
     
     if is_file(FILENAME) then
@@ -47,6 +46,21 @@ end
 
 LoadConfig()
 
+-- Hàm thực thi script an toàn
+local function SafeExecute(url)
+    if url and url ~= "" and url:match("^https?://") then
+        local success, content = pcall(game.HttpGet, game, url)
+        if success and content then
+            local func, err = loadstring(content)
+            if func then
+                task.spawn(func)
+            else
+                warn("Lỗi loadstring: " .. tostring(err))
+            end
+        end
+    end
+end
+
 ----------------------------------------------------------------
 -- GIAO DIỆN (UI)
 ----------------------------------------------------------------
@@ -60,7 +74,6 @@ local function CreateUI()
     main.Size = UDim2.new(0, 250, 0, 400)
     main.Position = UDim2.new(0, 20, 0.5, -200)
     main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    main.BorderSizePixel = 0
     main.Active = true
     main.Draggable = true
 
@@ -117,8 +130,8 @@ local function CreateUI()
 
     local t = Instance.new("TextLabel", main)
     t.Size = UDim2.new(1, 0, 0, 35)
-    t.Text = "S-SCRIPTS V2 (FIXED)"
-    t.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    t.Text = "S-SCRIPTS V3 (FIX NIL)"
+    t.BackgroundColor3 = Color3.fromRGB(142, 68, 173)
     t.TextColor3 = Color3.fromRGB(255, 255, 255)
     t.Font = Enum.Font.GothamBold
 
@@ -145,8 +158,8 @@ local function CreateUI()
         end
     end)
 
-    AddInput("Rejoin Source URL", "RejoinSource", false)
-    AddInput("Execute Script URL", "ExecuteThisScript", false)
+    AddInput("Rejoin Source URL (Required)", "RejoinSource", false)
+    AddInput("Execute Script URL (Optional)", "ExecuteThisScript", false)
 end
 
 CreateUI()
@@ -155,22 +168,29 @@ CreateUI()
 -- HỆ THỐNG LOGIC
 ----------------------------------------------------------------
 
--- Tự rejoin khi bị kick hoặc lỗi
 if getgenv().Config.AutoRejoin then
     local queue_teleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
     if queue_teleport then
-        pcall(function() 
-            queue_teleport("loadstring(game:HttpGet('"..getgenv().Config.RejoinSource.."'))()")
-            queue_teleport("loadstring(game:HttpGet('"..getgenv().Config.ExecuteThisScript.."'))()")
-        end)
+        local rejoinScript = "pcall(function() if not game:IsLoaded() then game.Loaded:Wait() end "
+        
+        -- Chỉ thêm vào queue nếu URL hợp lệ
+        if getgenv().Config.RejoinSource ~= "" then
+            rejoinScript = rejoinScript .. "loadstring(game:HttpGet('"..getgenv().Config.RejoinSource.."'))() "
+        end
+        if getgenv().Config.ExecuteThisScript ~= "" then
+            rejoinScript = rejoinScript .. "loadstring(game:HttpGet('"..getgenv().Config.ExecuteThisScript.."'))() "
+        end
+        
+        rejoinScript = rejoinScript .. "end)"
+        pcall(queue_teleport, rejoinScript)
     end
+    
     GuiService.ErrorMessageChanged:Connect(function()
         task.wait(1)
         TeleportService:Teleport(game.PlaceId, lp)
     end)
 end
 
--- Chống AFK
 lp.Idled:Connect(function()
     if getgenv().Config.AntiAFK then
         VirtualUser:CaptureController()
@@ -178,7 +198,6 @@ lp.Idled:Connect(function()
     end
 end)
 
--- Vòng lặp chính xử lý nhân vật
 local function handleCharacterLogic()
     local char = lp.Character
     if char and char:FindFirstChildOfClass("Humanoid") then
@@ -215,7 +234,6 @@ end
 if _G.MainLoop then _G.MainLoop:Disconnect() end
 _G.MainLoop = RunService.RenderStepped:Connect(handleCharacterLogic)
 
--- Vòng lặp Teleport
 task.spawn(function()
     while true do
         if getgenv().Config.TeleportLoop and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
