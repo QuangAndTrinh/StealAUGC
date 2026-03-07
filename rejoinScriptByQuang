@@ -79,18 +79,87 @@ local function HopServer()
 end
 
 ----------------------------------------------------------------
--- GIAO DIỆN (UI) - THEO YÊU CẦU CỦA BẠN
+-- GIAO DIỆN (UI) - TÍCH HỢP ON TOP & MINIMIZE
 ----------------------------------------------------------------
 local function CreateUI()
     if CoreGui:FindFirstChild("S_ScriptUI") then CoreGui.S_ScriptUI:Destroy() end
-    local sg = Instance.new("ScreenGui", CoreGui); sg.Name = "S_ScriptUI"
-    local main = Instance.new("Frame", sg); main.Size = UDim2.new(0, 320, 0, 420); main.Position = UDim2.new(0, 20, 0.5, -210); main.BackgroundColor3 = Color3.fromRGB(30, 30, 30); main.Active = true; main.Draggable = true
-    local scroll = Instance.new("ScrollingFrame", main); scroll.Size = UDim2.new(1, -10, 1, -45); scroll.Position = UDim2.new(0, 5, 0, 45); scroll.BackgroundTransparency = 1; scroll.CanvasSize = UDim2.new(0, 0, 0, 700); scroll.ScrollBarThickness = 3
-    local list = Instance.new("UIListLayout", scroll); list.Padding = UDim.new(0, 8)
-    local t = Instance.new("TextLabel", main); t.Size = UDim2.new(1, 0, 0, 40); t.Text = "Support Script V1"; t.BackgroundColor3 = Color3.fromRGB(142, 68, 173); t.TextColor3 = Color3.fromRGB(255, 255, 255); t.Font = Enum.Font.GothamBold
+    
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "S_ScriptUI"
+    sg.ResetOnSpawn = false
+    sg.DisplayOrder = 2147483647
+    sg.IgnoreGuiInset = true
+
+    local function ForceOnTop()
+        for _, child in ipairs(CoreGui:GetChildren()) do
+            if child:IsA("ScreenGui") and child ~= sg then
+                if child.DisplayOrder >= sg.DisplayOrder then
+                    child.DisplayOrder = 2147483646
+                end
+            end
+        end
+        sg.DisplayOrder = 2147483647
+        local p = CoreGui:FindFirstChild("PurchasePrompt") or CoreGui:FindFirstChild("RobloxGui") or CoreGui
+        if sg.Parent ~= p then sg.Parent = p end
+    end
+    RunService.RenderStepped:Connect(ForceOnTop)
+
+    local main = Instance.new("Frame", sg)
+    main.Size = UDim2.new(0, 320, 0, 420)
+    main.Position = UDim2.new(0, 20, 0.5, -210)
+    main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    main.Active = true
+    main.Draggable = true
+    main.ClipsDescendants = true
+    
+    local scroll = Instance.new("ScrollingFrame", main)
+    scroll.Size = UDim2.new(1, -10, 1, -45)
+    scroll.Position = UDim2.new(0, 5, 0, 45)
+    scroll.BackgroundTransparency = 1
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 700)
+    scroll.ScrollBarThickness = 3
+    
+    local list = Instance.new("UIListLayout", scroll)
+    list.Padding = UDim.new(0, 8)
+    
+    local t = Instance.new("TextLabel", main)
+    t.Size = UDim2.new(1, 0, 0, 40)
+    t.Text = "  Support Script V1"
+    t.BackgroundColor3 = Color3.fromRGB(142, 68, 173)
+    t.TextColor3 = Color3.fromRGB(255, 255, 255)
+    t.Font = Enum.Font.GothamBold
+    t.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- NÚT MINIMIZE (Gốc phải trên)
+    local minBtn = Instance.new("TextButton", main)
+    minBtn.Size = UDim2.new(0, 30, 0, 30)
+    minBtn.Position = UDim2.new(1, -35, 0, 5)
+    minBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    minBtn.Text = "-"
+    minBtn.TextColor3 = Color3.new(1, 1, 1)
+    minBtn.Font = Enum.Font.GothamBold
+    minBtn.TextSize = 20
+
+    local minimized = false
+    minBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        if minimized then
+            scroll.Visible = false
+            main:TweenSize(UDim2.new(0, 320, 0, 40), "Out", "Quad", 0.3, true)
+            minBtn.Text = "+"
+        else
+            main:TweenSize(UDim2.new(0, 320, 0, 420), "Out", "Quad", 0.3, true, function()
+                scroll.Visible = true
+            end)
+            minBtn.Text = "-"
+        end
+    end)
 
     local function AddSimpleToggle(text, configKey)
-        local btn = Instance.new("TextButton", scroll); btn.Size = UDim2.new(1, -10, 0, 30); btn.Font = Enum.Font.GothamBold; btn.TextSize = 11
+        local btn = Instance.new("TextButton", scroll)
+        btn.Size = UDim2.new(1, -10, 0, 30)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 11
         local function UpdateBtn()
             btn.Text = text .. ": " .. (getgenv().Config[configKey] and "ON" or "OFF")
             btn.BackgroundColor3 = getgenv().Config[configKey] and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
@@ -106,7 +175,6 @@ local function CreateUI()
     AddSimpleToggle("Fly Mode", "Fly")
     AddSimpleToggle("No Clip", "NoClip")
 
-    -- TELEPORT ROW
     local tpRow = Instance.new("Frame", scroll); tpRow.Size = UDim2.new(1, -10, 0, 30); tpRow.BackgroundTransparency = 1
     local loopBtn = Instance.new("TextButton", tpRow); loopBtn.Size = UDim2.new(0.4, -5, 1, 0); loopBtn.Font = Enum.Font.GothamBold; loopBtn.TextSize = 10
     local function UpdLoop() loopBtn.Text = "TP Loop: " .. (getgenv().Config.TeleportLoop and "ON" or "OFF"); loopBtn.BackgroundColor3 = getgenv().Config.TeleportLoop and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60) end
@@ -127,13 +195,11 @@ local function CreateUI()
     AddTimedRow("Auto Hop Server", "AutoHopServer", "AutoHopDelay")
     AddTimedRow("Auto Rejoin Timer", "AutoRejoinTimer", "AutoRejoinTimerDelay")
 
-    -- REJOIN URL ROW
     local rRow = Instance.new("Frame", scroll); rRow.Size = UDim2.new(1, -10, 0, 30); rRow.BackgroundTransparency = 1
     local rLab = Instance.new("TextLabel", rRow); rLab.Size = UDim2.new(0.35, 0, 1, 0); rLab.Text = "Rejoin URL:"; rLab.TextColor3 = Color3.fromRGB(200, 200, 200); rLab.BackgroundTransparency = 1; rLab.TextSize = 10; rLab.TextXAlignment = Enum.TextXAlignment.Left
     local rBox = Instance.new("TextBox", rRow); rBox.Position = UDim2.new(0.35, 0, 0, 0); rBox.Size = UDim2.new(0.65, 0, 1, 0); rBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45); rBox.TextColor3 = Color3.fromRGB(255, 255, 255); rBox.Text = getgenv().Config.RejoinSource; rBox.ClearTextOnFocus = false; rBox.TextTruncate = Enum.TextTruncate.AtEnd
     rBox.FocusLost:Connect(function() getgenv().Config.RejoinSource = rBox.Text; SaveConfig() end)
 
-    -- EXECUTE URL + LOOP + DELAY (Áp dụng Layout gọn gàng)
     local eRow = Instance.new("Frame", scroll); eRow.Size = UDim2.new(1, -10, 0, 30); eRow.BackgroundTransparency = 1
     local eLab = Instance.new("TextLabel", eRow); eLab.Size = UDim2.new(0.35, 0, 1, 0); eLab.Text = "Execute URL:"; eLab.TextColor3 = Color3.fromRGB(200, 200, 200); eLab.BackgroundTransparency = 1; eLab.TextSize = 10; eLab.TextXAlignment = Enum.TextXAlignment.Left
     local eBox = Instance.new("TextBox", eRow); eBox.Position = UDim2.new(0.35, 0, 0, 0); eBox.Size = UDim2.new(0.25, 0, 1, 0); eBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45); eBox.TextColor3 = Color3.fromRGB(255, 255, 255); eBox.Text = getgenv().Config.ExecuteThisScript; eBox.ClearTextOnFocus = false; eBox.TextTruncate = Enum.TextTruncate.AtEnd
@@ -144,7 +210,6 @@ local function CreateUI()
     local eDelay = Instance.new("TextBox", eRow); eDelay.Position = UDim2.new(0.8, 5, 0, 0); eDelay.Size = UDim2.new(0.2, -5, 1, 0); eDelay.BackgroundColor3 = Color3.fromRGB(45, 45, 45); eDelay.TextColor3 = Color3.fromRGB(255, 255, 255); eDelay.Text = tostring(getgenv().Config.LoopExecuteDelay)
     eDelay.FocusLost:Connect(function() getgenv().Config.LoopExecuteDelay = tonumber(eDelay.Text) or 5; SaveConfig() end)
 
-    -- USER ONLY ROW
     local uRow = Instance.new("Frame", scroll); uRow.Size = UDim2.new(1, -10, 0, 30); uRow.BackgroundTransparency = 1
     local uSave = Instance.new("TextButton", uRow); uSave.Size = UDim2.new(0.5, -5, 1, 0); uSave.BackgroundColor3 = Color3.fromRGB(155, 89, 182); uSave.Text = "SAVE USER ONLY"; uSave.Font = Enum.Font.GothamBold; uSave.TextSize = 10
     uSave.MouseButton1Click:Connect(function() SaveConfig() end)
@@ -155,13 +220,12 @@ end
 CreateUI()
 
 ----------------------------------------------------------------
--- HỆ THỐNG LOGIC (SỬ DỤNG CẤU TRÚC LOADER BẠN ĐƯA RA)
+-- HỆ THỐNG LOGIC
 ----------------------------------------------------------------
 if getgenv().Config.AutoRejoin then
     local QueueOnTeleport = queue_on_teleport or syn.queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
     if QueueOnTeleport then
         pcall(function()
-            -- Cấu trúc sạch 100% như bạn yêu cầu
             if getgenv().Config.RejoinSource ~= "" then
                 QueueOnTeleport("loadstring(game:HttpGet('"..getgenv().Config.RejoinSource.."'))()")
             end
@@ -173,7 +237,6 @@ if getgenv().Config.AutoRejoin then
     GuiService.ErrorMessageChanged:Connect(function() task.wait(1) TeleportService:Teleport(game.PlaceId, lp) end)
 end
 
--- Vòng lặp Execute độc lập
 task.spawn(function()
     while true do
         if getgenv().Config.LoopExecute and getgenv().Config.ExecuteThisScript ~= "" then
@@ -183,7 +246,6 @@ task.spawn(function()
     end
 end)
 
--- Các logic phụ khác giữ nguyên 100%
 task.spawn(function()
     while task.wait(1) do
         if getgenv().Config.AutoHopServer then
