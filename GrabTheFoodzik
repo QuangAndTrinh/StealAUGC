@@ -1,116 +1,95 @@
 if getgenv().foodzik then return end
 getgenv().foodzik = true
 
--- Khởi tạo UI (Draggable & Active)
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
-local ForceButton = Instance.new("TextButton")
-local SkillButton = Instance.new("TextButton")
+local Credit = Instance.new("TextLabel")
+local UIStroke = Instance.new("UIStroke")
 
--- Thiết lập GUI chính
-ScreenGui.Name = "Custom_Control_Panel_V2"
-ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.Name = "RbxNayap_Auto_V2"
+ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BackgroundTransparency = 0.5
 MainFrame.Position = UDim2.new(0.4, 0, 0.4, 0)
-MainFrame.Size = UDim2.new(0, 220, 0, 150)
+MainFrame.Size = UDim2.new(0, 200, 0, 80)
 MainFrame.Active = true
-MainFrame.Draggable = true 
+MainFrame.Draggable = true
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
-Title.Size = UDim2.new(1, 0, 0, 30)
+-- Viền Rainbow
+UIStroke.Parent = MainFrame
+UIStroke.Thickness = 2
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+task.spawn(function()
+    while true do
+        local hue = tick() % 5 / 5
+        UIStroke.Color = Color3.fromHSV(hue, 1, 1)
+        task.wait()
+    end
+end)
+
+Title.Size = UDim2.new(1, 0, 0.6, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "GRAB THE FOODZIK!"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 18
+Title.TextSize = 20
 Title.Parent = MainFrame
 
--- Biến trạng thái (Toggle)
-local Toggles = {
-    ForceFoodzik = true,
-    XPFarming = true
-}
+Credit.Size = UDim2.new(1, 0, 0.4, 0)
+Credit.Position = UDim2.new(0, 0, 0.5, 0)
+Credit.BackgroundTransparency = 1
+Credit.Text = "by RbxNayap"
+Credit.TextColor3 = Color3.fromRGB(200, 200, 200)
+Credit.Font = Enum.Font.SourceSansItalic
+Credit.TextSize = 16
+Credit.Parent = MainFrame
 
--- Cấu hình Remote chung
-local BridgeNet = game:GetService("ReplicatedStorage"):WaitForChild("ncxyzero_bridgenet2-fork@1.1.5"):WaitForChild("dataRemoteEvent")
+local BridgeNet = ReplicatedStorage:WaitForChild("ncxyzero_bridgenet2-fork@1.1.5"):WaitForChild("dataRemoteEvent")
 
--- Hàm tạo nút bấm
-local function createButton(name, text, pos, toggleKey)
-    local btn = Instance.new("TextButton")
-    btn.Name = name
-    btn.Parent = MainFrame
-    btn.Position = pos
-    btn.Size = UDim2.new(0.9, 0, 0, 40)
-    btn.AnchorPoint = Vector2.new(0.5, 0)
-    btn.Position = UDim2.new(0.5, 0, pos.Y.Scale, pos.Y.Offset)
-    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    btn.Text = text .. ": OFF"
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.SourceSans
-    btn.TextSize = 16
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-
-    btn.MouseButton1Click:Connect(function()
-        Toggles[toggleKey] = not Toggles[toggleKey]
-        btn.Text = text .. (Toggles[toggleKey] and ": OFF" or ": ON")
-        btn.BackgroundColor3 = Toggles[toggleKey] and Color3.fromRGB(60, 60, 60) or Color3.fromRGB(40, 120, 40)
-    end)
-    return btn
-end
-
-createButton("ForceButton", "Force Becoming Foodzik", UDim2.new(0.5, 0, 0, 40), "ForceFoodzik")
-createButton("SkillButton", "Farm Skill's XP", UDim2.new(0.5, 0, 0, 90), "XPFarming")
-
--- [VÒNG LẶP 1] Force Becoming Foodzik (Check KHÔNG có phone)
+-- [AUTO 1] Force Foodzik (Tự động chạy)
 task.spawn(function()
     while true do
-        if Toggles.ForceFoodzik then
-            local character = game.Players.LocalPlayer.Character
-            if character then
-                -- Kiểm tra nếu KHÔNG có part tên "phone"
-                if not character:FindFirstChild("phone") then
-                    task.wait(0.1) -- Chờ 1 giây
-                    -- Kiểm tra lại lần nữa sau 1s để chắc chắn vẫn chưa có phone
-                    if Toggles.ForceFoodzik and not character:FindFirstChild("phone") then
-                        local args = {
-                            {
-                                {
-                                    "\001",
-                                    ")\006\144\196\215\130M\006\178'\149\131\179\181@\226",
-                                    { workspace:WaitForChild("Bu\197\130as") }
-                                },
-                                "("
-                            }
-                        }
-                        BridgeNet:FireServer(unpack(args))
-                    end
-                end
+        local character = Players.LocalPlayer.Character
+        if character and not character:FindFirstChild("phone") then
+            task.wait(0.1)
+            if not character:FindFirstChild("phone") then
+                local args = {
+                    {
+                        {
+                            "\001",
+                            ")\006\144\196\215\130M\006\178'\149\131\179\181@\226",
+                            { workspace:WaitForChild("Bu\197\130as") }
+                        },
+                        "("
+                    }
+                }
+                BridgeNet:FireServer(unpack(args))
             end
         end
-        task.wait(0.5) -- Tốc độ quét điều kiện
+        task.wait(0.5)
     end
 end)
 
--- [VÒNG LẶP 2] XP Skill Farming (30.1 giây)
+-- [AUTO 2] XP Skill Farming (Tự động chạy mỗi 30.1s)
 task.spawn(function()
     while true do
-        if Toggles.XPFarming then
-            BridgeNet:FireServer({[1]=2, [2]="\b"})
-            BridgeNet:FireServer({[1]=1, [2]="\b"})
-            task.wait(30.1)
-        else
-            task.wait(0)
-        end
+        BridgeNet:FireServer({[1]=2, [2]="\b"})
+        BridgeNet:FireServer({[1]=1, [2]="\b"})
+        task.wait(30.1)
     end
 end)
