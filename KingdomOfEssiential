@@ -1,0 +1,127 @@
+local L = game:GetService("RunService")
+local P = game:GetService("Players")
+local U = P.LocalPlayer
+local T = game:GetService("TweenService")
+local W = workspace
+
+local f = Instance.new("ScreenGui")
+f.Name = "QuacHub_V5_LockCheck"
+f.Parent = game:GetService("CoreGui")
+
+local m = Instance.new("Frame")
+m.Size = UDim2.new(0, 220, 0, 250)
+m.Position = UDim2.new(0.5, -110, 0.5, -125)
+m.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+m.Active = true
+m.Draggable = true
+m.Parent = f
+
+local i = Instance.new("TextBox")
+i.Size = UDim2.new(1, -20, 0, 30)
+i.Position = UDim2.new(0, 10, 0, 10)
+i.Text = "Lock Scan Active"
+i.TextColor3 = Color3.fromRGB(0, 255, 100)
+i.BackgroundTransparency = 0.5
+i.Parent = m
+
+local a = true
+local b = Instance.new("TextButton")
+b.Size = UDim2.new(1, -20, 0, 40)
+b.Position = UDim2.new(0, 10, 0, 50)
+b.Text = "Auto Tycoon: ON"
+b.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+b.Parent = m
+
+local c = true
+local d = Instance.new("TextButton")
+d.Size = UDim2.new(1, -20, 0, 40)
+d.Position = UDim2.new(0, 10, 0, 100)
+d.Text = "Auto Collect: ON"
+d.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+d.Parent = m
+
+local function tp(p)
+    if p and U.Character and U.Character:FindFirstChild("HumanoidRootPart") then
+        U.Character.HumanoidRootPart.CFrame = p
+    end
+end
+
+local function g()
+    local x = "rbxthumb://type=AvatarHeadShot&id=" .. U.UserId .. "&w=100&h=100"
+    for _, v in pairs(W:GetChildren()) do
+        if v.Name:match("^Tycoon") then
+            local o = v:FindFirstChild("OwnerGui", true)
+            if o and o:FindFirstChild("Avatar") and o.Avatar.Image == x then
+                return v
+            end
+        end
+    end
+    return nil
+end
+
+b.MouseButton1Click:Connect(function()
+    a = not a
+    b.Text = "Auto Tycoon: " .. (a and "ON" or "OFF")
+    b.BackgroundColor3 = a and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+end)
+
+d.MouseButton1Click:Connect(function()
+    c = not c
+    d.Text = "Auto Collect: " .. (c and "ON" or "OFF")
+    d.BackgroundColor3 = c and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+end)
+
+task.spawn(function()
+    while task.wait(1) do
+        if a then
+            local t = g()
+            if t then
+                i.Text = "Scanning: " .. t.Name
+                for _, v in pairs(t:GetChildren()) do
+                    if v.Name:match("^Button_") and not v.Name:match("Upgrade") then
+                        local tGui = v:FindFirstChild("TitleGui")
+                        local isLocked = false
+                        
+                        -- KIỂM TRA ĐIỀU KIỆN MỚI (LOCK VISIBLE)
+                        if tGui and tGui:FindFirstChild("Lock") then
+                            if tGui.Lock.Visible == true then
+                                isLocked = true
+                            end
+                        end
+                        
+                        if not isLocked then
+                            local p = v:IsA("BasePart") and v or v:FindFirstChildWhichIsA("BasePart", true)
+                            if p then
+                                tp(p.CFrame)
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(5) do
+        if c then
+            local t = g()
+            if t then
+                local cd = t:FindFirstChild("P_Coindropper_1")
+                if cd then
+                    local h = cd:FindFirstChild("HouseCoinDropper")
+                    if h and h:FindFirstChild("Collider") then
+                        tp(h.Collider.CFrame)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(1) do
+        game["ReplicatedStorage"]["RemoteEvents"]["Rebirth"]:FireServer()
+    end
+end)
