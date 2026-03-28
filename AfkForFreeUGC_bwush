@@ -2,8 +2,11 @@ if getgenv().AfkForFreeUGC_bwush then return end
 getgenv().AfkForFreeUGC_bwush = true
 
 --===[ QueueOnTeleport Loader ]===--
-local QueueOnTeleport = queue_on_teleport or syn.queue_on_teleport
+local QueueOnTeleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
 local SCRIPT_URL = "https://raw.githubusercontent.com/QuangTrinh1009200303012007/RobloxUGC_Scripts/refs/heads/main/AfkForFreeUGC_bwush"
+
+-- Biến kiểm soát việc có cho phép Rejoin hay không
+local allowRejoin = true 
 
 pcall(function()
     if QueueOnTeleport then
@@ -11,7 +14,6 @@ pcall(function()
     end
 end)
 
--- Đợi Game Load
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
@@ -19,47 +21,62 @@ end
 local player = game.Players.LocalPlayer
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
+local GuiService = game:GetService("GuiService")
 
--- 1. TÍNH NĂNG MỚI: Văng game nếu server có từ 2 người trở lên
-local function CheckAndKickIfPeople()
+-- 1. Hàm kiểm tra số lượng người và quyết định có Rejoin hay không
+local function CheckServerSecurity()
     if #Players:GetPlayers() >= 2 then
-        player:Kick("\n[BẢO MẬT]\nPhát hiện có người lạ trong server!\nĐã tự thoát để an toàn.")
+        allowRejoin = false -- Vô hiệu hóa tính năng tự động quay lại
+        player:Kick("\n[BẢO MẬT CAO]\nPhát hiện server có " .. #Players:GetPlayers() .. " người.\nDừng Rejoin để bảo vệ tài khoản.")
     end
 end
-CheckAndKickIfPeople()
-Players.PlayerAdded:Connect(CheckAndKickIfPeople)
 
--- 2. Thực hiện Teleport đến vị trí chỉ định
-local targetPos = Vector3.new(741, 256, -329)
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
+-- Chạy kiểm tra ngay lập tức và khi có người mới vào
+CheckServerSecurity()
+Players.PlayerAdded:Connect(CheckServerSecurity)
 
-hrp.CFrame = CFrame.new(targetPos)
+-- 2. Thực hiện Teleport đến vị trí chỉ định (Nếu chưa bị kick)
+task.spawn(function()
+    local targetPos = Vector3.new(741, 256, -329)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
 
--- Chờ ổn định vị trí
-repeat
-    task.wait()
     hrp.CFrame = CFrame.new(targetPos)
-until (hrp.Position - targetPos).Magnitude < 5
+    
+    -- Chờ ổn định vị trí
+    local count = 0
+    repeat
+        task.wait(0.1)
+        hrp.CFrame = CFrame.new(targetPos)
+        count = count + 1
+    until (hrp.Position - targetPos).Magnitude < 5 or count > 20
+end)
 
-task.wait() -- Đợi thêm 2 giây cho chắc chắn
-
--- 3. Hàm Rejoin ưu tiên Server Riêng Tư
+-- 3. Logic Rejoin
 local function RejoinLogic()
+    -- Chỉ thực hiện Rejoin nếu biến allowRejoin vẫn là true
+    if not allowRejoin then 
+        print("Rejoin bị chặn do phát hiện server không an toàn.")
+        return 
+    end
+
     if game.PrivateServerId ~= "" then
-        -- Đây là lệnh quan trọng nhất để giữ bạn ở Server Riêng
         TeleportService:TeleportToPrivateServer(game.PlaceId, game.PrivateServerId, {player})
     else
-        -- Nếu không có server riêng thì vào server thường
         TeleportService:Teleport(game.PlaceId, player)
     end
 end
 
--- Tự động gọi Rejoin khi bị Kick (Bao gồm cả lệnh Kick ở bước 4)
-game:GetService("GuiService").ErrorMessageChanged:Connect(function()
-    task.wait()
-    RejoinLogic()
+-- Tự động gọi Rejoin khi mất kết nối hoặc bị Kick
+GuiService.ErrorMessageChanged:Connect(function()
+    if allowRejoin then
+        task.wait()
+        RejoinLogic()
+    end
 end)
 
--- 4. THỰC HIỆN KICK ĐỂ REJOIN (Như bạn yêu cầu)
-player:Kick("Đang Rejoin về Server Riêng để kích hoạt script...")
+-- 4. THỰC HIỆN KICK ĐỂ REJOIN (Chỉ thực hiện nếu server an toàn - 1 người)
+task.wait(0.5) -- Đợi một chút để hàm kiểm tra người (CheckServerSecurity) kịp chạy
+if allowRejoin then
+    player:Kick("Đang Rejoin về Server Riêng để kích hoạt script...")
+end
