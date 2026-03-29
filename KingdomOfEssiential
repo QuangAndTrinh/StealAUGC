@@ -150,7 +150,7 @@ task.spawn(function()
                     if h and h:FindFirstChild("Collider") then tp(h.Collider.CFrame) end
                 end
 
-                local exclude = {["Shovel"] = true, ["Petal"] = true, ["Scythe"] = true}
+                local exclude = {["Shovel"] = true, ["Petal"] = true, ["Scythe"] = true, ["Aqua"] = true, ["Sprout"] = true}
                 local bp = U:FindFirstChild("Backpack")
                 
                 if bp then
