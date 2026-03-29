@@ -4,6 +4,12 @@ local U = P.LocalPlayer
 local T = game:GetService("TweenService")
 local W = workspace
 
+-- Hàm chuyển đổi chuỗi "38,838" thành số 38838
+local function parse(str)
+    local cleaned = str:gsub(",", "")
+    return tonumber(cleaned) or 0
+end
+
 local f = Instance.new("ScreenGui")
 f.Name = "QuacHub_V5_LockCheck"
 f.Parent = game:GetService("CoreGui")
@@ -71,29 +77,39 @@ d.MouseButton1Click:Connect(function()
     d.BackgroundColor3 = c and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
 end)
 
+-- Biến kiểm tra trạng thái đủ tiền để điều chỉnh tốc độ collect
+local enoughMoney = false
+
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(0.1) do
         if a then
             local t = g()
             if t then
                 i.Text = "Scanning: " .. t.Name
+                local currentCoins = parse(U.PlayerGui.HUD.LeftContainer.Currencies.Coins.Amount.Text)
+                
                 for _, v in pairs(t:GetChildren()) do
                     if v.Name:match("^Button_") and not v.Name:match("Upgrade") then
                         local tGui = v:FindFirstChild("TitleGui")
                         local isLocked = false
                         
-                        -- KIỂM TRA ĐIỀU KIỆN MỚI (LOCK VISIBLE)
-                        if tGui and tGui:FindFirstChild("Lock") then
-                            if tGui.Lock.Visible == true then
-                                isLocked = true
-                            end
+                        if tGui and tGui:FindFirstChild("Lock") and tGui.Lock.Visible == true then
+                            isLocked = true
                         end
                         
-                        if not isLocked then
-                            local p = v:IsA("BasePart") and v or v:FindFirstChildWhichIsA("BasePart", true)
-                            if p then
-                                tp(p.CFrame)
-                                break
+                        if not isLocked and tGui and tGui:FindFirstChild("Cost") then
+                            local costValue = parse(tGui.Cost.Amount.Text)
+                            
+                            -- SO SÁNH TIỀN
+                            if currentCoins >= costValue then
+                                enoughMoney = true
+                                local p = v:IsA("BasePart") and v or v:FindFirstChildWhichIsA("BasePart", true)
+                                if p then
+                                    tp(p.CFrame)
+                                    break
+                                end
+                            else
+                                enoughMoney = false
                             end
                         end
                     end
@@ -104,7 +120,11 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while task.wait(5) do
+    while true do
+        -- Tốc độ chờ: 1 giây nếu thiếu tiền, 5 giây nếu đang bận mua tycoon
+        local waitTime = (not enoughMoney) and 0.7 or 1
+        task.wait(waitTime)
+        
         if c then
             local t = g()
             if t then
@@ -121,7 +141,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while task.wait(1) do
-        game["ReplicatedStorage"]["RemoteEvents"]["Rebirth"]:FireServer()
+    while task.wait(0.1) do
+        game:GetService("ReplicatedStorage")["RemoteEvents"]["Rebirth"]:FireServer()
     end
 end)
