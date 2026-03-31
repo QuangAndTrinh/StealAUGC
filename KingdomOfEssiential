@@ -1,3 +1,6 @@
+if getgenv().kingdom then return end
+getgenv().kingdom = true
+
 local L = game:GetService("RunService")
 local P = game:GetService("Players")
 local U = P.LocalPlayer
@@ -95,7 +98,7 @@ end)
 
 local enoughMoney = false
 
--- LOOP TYCOON: Khôi phục logic so sánh tiền chuẩn của bạn
+-- LOOP TYCOON
 task.spawn(function()
     while task.wait(0.1) do
         if a then
@@ -116,7 +119,6 @@ task.spawn(function()
                         if not isLocked and tGui and tGui:FindFirstChild("Cost") then
                             local costValue = parse(tGui.Cost.Amount.Text)
                             
-                            -- Logic so sánh tiền: Teleport nếu đủ, cập nhật enoughMoney
                             if currentCoins >= costValue then
                                 enoughMoney = true
                                 local p = v:IsA("BasePart") and v or v:FindFirstChildWhichIsA("BasePart", true)
@@ -135,7 +137,7 @@ task.spawn(function()
     end
 end)
 
--- LOOP COLLECT & TOOL: Giữ nguyên waitTime 0.7/1 và logic Fire Grid bỏ qua cái thứ 2
+-- LOOP COLLECT & TOOL: Whitelist Tomato & Corn
 task.spawn(function()
     while true do
         local waitTime = (not enoughMoney) and 0.7 or 1
@@ -150,12 +152,20 @@ task.spawn(function()
                     if h and h:FindFirstChild("Collider") then tp(h.Collider.CFrame) end
                 end
 
-                local exclude = {["Shovel"] = true, ["Petal"] = true, ["Scythe"] = true, ["Aqua"] = true, ["Sprout"] = true}
+                -- WHITELIST CỦA BẠN
+                local whitelist = {["Tomato"] = true, ["Corn"] = true, ["Sugar Cane"] = true, ["Eggplant"] = true, ["Pumpkin"] = true}
                 local bp = U:FindFirstChild("Backpack")
+                
+                -- Kiểm tra nếu đang cầm tool KHÔNG nằm trong whitelist thì gỡ xuống
+                local equippedTool = U.Character:FindFirstChildOfClass("Tool")
+                if equippedTool and not whitelist[equippedTool.Name] then
+                    U.Character.Humanoid:UnequipTools()
+                end
                 
                 if bp then
                     for _, tool in pairs(bp:GetChildren()) do
-                        if tool:IsA("Tool") and not exclude[tool.Name] and not U.Character:FindFirstChildOfClass("Tool") then
+                        -- Chỉ trang bị nếu tool nằm trong whitelist
+                        if tool:IsA("Tool") and whitelist[tool.Name] and not U.Character:FindFirstChildOfClass("Tool") then
                             U.Character.Humanoid:EquipTool(tool)
                             task.wait(0.2)
                             
@@ -188,7 +198,7 @@ task.spawn(function()
     end
 end)
 
--- LOOP GEMS & SPIN: Tốc độ cao 50 lần / 0s
+-- LOOP GEMS & SPIN
 task.spawn(function()
     local GemEvent = RS:WaitForChild("RemoteEvents"):WaitForChild("RemoteCollectGem")
     local SpinInc = RS:WaitForChild("RemoteFunctions"):WaitForChild("IncrementSpinAvailable")
@@ -210,5 +220,14 @@ end)
 task.spawn(function()
     while task.wait(0.1) do
         RS["RemoteEvents"]["Rebirth"]:FireServer()
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.1) do
+        local args = {
+	"Corn"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvents"):WaitForChild("BuySeedEvent"):FireServer(unpack(args))
     end
 end)
