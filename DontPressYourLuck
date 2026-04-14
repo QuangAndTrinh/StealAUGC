@@ -1,81 +1,10 @@
--- Thêm biến cấu hình theo yêu cầu
-local allowRejoin = true
-
--- Logic Rejoin khi bị lỗi hoặc văng
-local function RejoinLogic()
-    if not allowRejoin then return end
-
-    if game.PrivateServerId ~= "" then
-        TeleportService:TeleportToPrivateServer(game.PlaceId, game.PrivateServerId, {player})
-    else
-        TeleportService:Teleport(game.PlaceId, player)
-    end
-end
-local QueueOnTeleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
-local SCRIPT_URL = "https://raw.githubusercontent.com/QuangTrinh1009200303012007/RobloxUGC_Scripts/refs/heads/main/DontPressYourLuck"
-
--- Đảm bảo script tự chạy lại sau khi chuyển server
-pcall(function()
-    if QueueOnTeleport then
-        QueueOnTeleport("loadstring(game:HttpGet('"..SCRIPT_URL.."'))()")
-    end
-end)
-
-
-local GuiService = game:GetService("GuiService")
-local TeleportService = game:GetService("TeleportService")
-
-GuiService.ErrorMessageChanged:Connect(function()
-    if allowRejoin then
-        task.wait()
-        RejoinLogic()
-    end
-end)
---https://www.roblox.com/games/105564361566803
-
---loadstring(game:HttpGet("https://raw.githubusercontent.com/Rawbr10/Roblox-Scripts/refs/heads/main/God%20Mode%20Script%20Universal"))()
-
+-- Tự động chạy tính năng Get 100lucks Badges (TP + Fire)
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- === TẠO GIAO DIỆN (UI) ===
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game:GetService("CoreGui")
-ScreenGui.Name = "SuperMenu_Togglable"
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 200, 0, 150)
-MainFrame.Position = UDim2.new(0.1, 0, 0.4, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.Active = true
-MainFrame.Draggable = true -- Có thể nắm kéo menu
-
--- Nút 1: Mystery Button Farm
-local MysteryBtn = Instance.new("TextButton")
-MysteryBtn.Parent = MainFrame
-MysteryBtn.Size = UDim2.new(1, -20, 0, 50)
-MysteryBtn.Position = UDim2.new(0, 10, 0, 15)
-MysteryBtn.Text = "get 100lucks badges: OFF"
-MysteryBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-MysteryBtn.TextColor3 = Color3.new(1, 1, 1)
-
--- Nút 2: Claim UGC
-local UGCBtn = Instance.new("TextButton")
-UGCBtn.Parent = MainFrame
-UGCBtn.Size = UDim2.new(1, -20, 0, 50)
-UGCBtn.Position = UDim2.new(0, 10, 0, 80)
-UGCBtn.Text = "Claim UGC(100lucks badge needed): OFF"
-UGCBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-UGCBtn.TextColor3 = Color3.new(1, 1, 1)
-
--- Biến trạng thái
-local mysteryActive = false
-local ugcActive = false
-
--- === LOGIC NÚT 1: MYSTERY BUTTON (GIỮ NGUYÊN GỐC) ===
+-- Hàm thực hiện logic lấy badge (giữ nguyên 100% tính năng gốc)
 local function startMysteryFarm()
-    while mysteryActive do
+    while true do -- Chạy liên tục không ngừng
         for i = 1, 999 do
             task.spawn(function()
                 local character = player.Character
@@ -83,7 +12,7 @@ local function startMysteryFarm()
                 local rootPart = character:FindFirstChild("HumanoidRootPart")
                 if not rootPart then return end
 
-                -- --- ĐOẠN GỐC CỦA BẠN ---
+                -- Tìm các nút MysteryButton_Round trong Workspace
                 local buttons = {}
                 for _, m in ipairs(workspace:GetChildren()) do
                     if m.Name == "MysteryButton_Round" then
@@ -92,79 +21,27 @@ local function startMysteryFarm()
                     end
                 end
 
+                -- Thực hiện Teleport và Fire Prompt
                 for _, prompt in ipairs(buttons) do
-                    if not mysteryActive then break end -- Dừng nếu tắt nút
                     if not character or not character:FindFirstChild("Humanoid") or character.Humanoid.Health <= 0 then break end
                     if prompt and prompt.Parent and prompt.Enabled then
                         rootPart.CFrame = prompt.Parent.CFrame
-                        task.wait(0.1) 
+                        task.wait(0.01) 
                         fireproximityprompt(prompt)
+                        
                         local checkStartTime = tick()
                         repeat
                             task.wait() 
                             if tick() - checkStartTime > 10 then break end 
                         until not prompt or not prompt.Parent or not prompt.Enabled or not prompt:IsDescendantOf(game)
-                        task.wait(0.01) 
+                        task.wait(0.05) 
                     end
                 end
-                -- --- HẾT ĐOẠN GỐC ---
             end)
         end
-        task.wait(0.1)
+        task.wait(0.05) -- Nghỉ một chút trước khi lặp lại vòng quét mới
     end
 end
 
--- === LOGIC NÚT 2: CLAIM UGC (TỌA ĐỘ 11, 71, -196) ===
-local function startClaimUGC()
-    while ugcActive do
-        local character = player.Character
-        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-        
-        if rootPart then
-            -- Fire liên tục (Dùng for 1,4 để tăng tốc độ chiếm quyền)
-            for i = 1, 4 do
-                task.spawn(function()
-                    local path = game:GetService("Workspace"):FindFirstChild("UGCLimted")
-                    if path then
-                        local prompt = path["UGC"]["Proximitys"]["UGCBuy"]["ProximityPrompt"]
-                        if prompt then
-                            fireproximityprompt(prompt)
-                        end
-                    end
-                end)
-            end
-        end
-        task.wait(1) -- Delay 1s như yêu cầu
-    end
-end
-
--- === SỰ KIỆN CLICK ===
-MysteryBtn.MouseButton1Click:Connect(function()
-    mysteryActive = not mysteryActive
-    if mysteryActive then
-        MysteryBtn.Text = "get 100lucks badges: ON"
-        MysteryBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        task.spawn(startMysteryFarm)
-    else
-        MysteryBtn.Text = "get100lucks badges: OFF"
-        MysteryBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-    end
-end)
-
-UGCBtn.MouseButton1Click:Connect(function()
-    ugcActive = not ugcActive
-    if ugcActive then
-        UGCBtn.Text = "Claim UGC(200lucks badges): ON"
-        UGCBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        task.spawn(startClaimUGC)
-    else
-        UGCBtn.Text = "Claim UGC(100lucks badge needed): OFF"
-        UGCBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-    end
-end)
-
--- Tự động kích hoạt Mystery Farm ngay khi chạy mã
-mysteryActive = true
-MysteryBtn.Text = "get 100lucks badges: ON"
-MysteryBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+-- Kích hoạt chạy ngay lập tức
 task.spawn(startMysteryFarm)
