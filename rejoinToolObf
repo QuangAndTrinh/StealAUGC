@@ -4,8 +4,8 @@ yes | pkg update -y && pkg upgrade -y
 mkdir -p /storage/emulated/0/Download
 yes | pkg install -y python python-psutil
 yes | pip install --quiet aiohttp requests "python-socketio[asyncio_client]"
-DEST_PATH="/storage/emulated/0/Download/main_beta.py"
-RAW_URL="https://gist.githubusercontent.com/nooddev-real/9f879b685b328d8269b674cebf1e2888/raw/main_beta.py"
+DEST_PATH="/storage/emulated/0/Download/rejoinToolByTisaVN_Obf.py"
+RAW_URL="link raw http rejoinToolByTisaVN_Obf.py, nhưg chưa đưa lên"
 
 curl -sSL "$RAW_URL" -o "$DEST_PATH"
 
