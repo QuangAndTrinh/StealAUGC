@@ -1,5 +1,5 @@
-if getgenv().AfkForFreeUGC_bwush2 then return end
-getgenv().AfkForFreeUGC_bwush2 = true
+if getgenv().AfkForFreeUGC_bwush1 then return end
+getgenv().AfkForFreeUGC_bwush1 = true
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "DebugCountdown"
@@ -17,7 +17,7 @@ debugLabel.Font = Enum.Font.Code
 debugLabel.Parent = screenGui
 
 local QueueOnTeleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
-local SCRIPT_URL = "https://raw.githubusercontent.com/QuangTrinh1009200303012007/RobloxUGC_Scripts/refs/heads/main/AfkForFreeUGC_bwush"
+local SCRIPT_URL = "https://raw.githubusercontent.com/QuangTrinh1009200303012007/RobloxUGC_Scripts/refs/heads/main/AfkForFreeUGC_bwush1"
 
 local allowRejoin = true 
 
@@ -49,12 +49,12 @@ Players.PlayerAdded:Connect(CheckServerSecurity)
 
 task.spawn(function()
     if not allowRejoin then return end
-    local targetPos = Vector3.new(741, 256, -329)
+    local targetPos = Vector3.new(739, 257, -324)
     local character = player.Character or player.CharacterAdded:Wait()
     local hrp = character:WaitForChild("HumanoidRootPart")
 
     local distance = (hrp.Position - targetPos).Magnitude
-    local duration = distance / 500
+    local duration = distance / 100
 
     local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
     local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(targetPos)})
@@ -83,7 +83,7 @@ GuiService.ErrorMessageChanged:Connect(function()
     end
 end)
 
-local timeLeft = 10.5
+local timeLeft = 10.1
 while timeLeft > 0 do
     debugLabel.Text = string.format("Chuẩn bị Kick trong: %.1fS", timeLeft)
     task.wait(0.1)
