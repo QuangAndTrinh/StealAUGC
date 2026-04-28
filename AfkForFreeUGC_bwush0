@@ -107,7 +107,7 @@ GuiService.ErrorMessageChanged:Connect(function()
 end)
 
 -- // Đếm ngược Rejoin
-local timeLeft = 9.1
+local timeLeft = 8.1
 while timeLeft > 0 do
     debugLabel.Text = string.format("Chuẩn bị Kick trong: %.1fS", timeLeft)
     task.wait(0.1)
