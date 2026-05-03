@@ -37,59 +37,51 @@ local player = game.Players.LocalPlayer
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local GuiService = game:GetService("GuiService")
+local TweenService = game:GetService("TweenService")
 
--- // Kiểm tra bảo mật (Chống người lạ)
+-- // Kiểm tra bảo mật
 local function CheckServerSecurity()
     if #Players:GetPlayers() >= 2 then
         allowRejoin = false 
         player:Kick("\nServer có " .. #Players:GetPlayers() .. " người! Vô server riêng dùm coi 😡")
     end
 end
+
 CheckServerSecurity()
 Players.PlayerAdded:Connect(CheckServerSecurity)
 
--- // 1. TÍNH NĂNG MỚI: TELEPORT KHI VỪA CHẠY
-task.spawn(function()
-    local char = player.Character or player.CharacterAdded:Wait()
-    local hrp = char:WaitForChild("HumanoidRootPart")
-    hrp.CFrame = CFrame.new(41291, -303, -118)
-end)
 
--- // 2. TÍNH NĂNG MỚI: BRING STAGE 10 (Hỗ trợ khi Reset)
+-- // Logic di chuyển chính (Tween quay trở lại)
 task.spawn(function()
+    if not allowRejoin then return end
+    
     while true do
-        if allowRejoin then
-            pcall(function()
-                local char = player.Character or player.CharacterAdded:Wait()
-                local hrp = char:WaitForChild("HumanoidRootPart")
-                local stage10 = workspace:FindFirstChild("obby") and workspace.obby:FindFirstChild("Stages") and workspace.obby.Stages:FindFirstChild("Stage 10")
-                
-                if stage10 and stage10:IsA("BasePart") then
-                    stage10.CFrame = hrp.CFrame -- Kéo Stage 10 về vị trí Player
-                    stage10.CanCollide = false
-                end
-            end)
+        local character = player.Character or player.CharacterAdded:Wait()
+        local hrp = character:WaitForChild("HumanoidRootPart")
+        
+        local stage10 = workspace:FindFirstChild("obby") and workspace.obby:FindFirstChild("Stages") and workspace.obby.Stages:FindFirstChild("Stage 10")
+
+        if stage10 then
+            -- ƯU TIÊN SỐ 1: Stage 10 (Tốc độ 200)
+            local distance = (hrp.Position - stage10.Position).Magnitude
+            local tween = TweenService:Create(hrp, TweenInfo.new(distance / 500, Enum.EasingStyle.Linear), {CFrame = stage10.CFrame})
+            tween:Play()
+            tween.Completed:Wait()
+        else
+            -- NẾU KHÔNG CÓ STAGE 10: Tween tới tọa độ mới (Tốc độ 50)
+            local targetPos = Vector3.new(41320, -375, -90)
+            local distance = (hrp.Position - targetPos).Magnitude
+            
+            if distance > 2 then
+                local tween = TweenService:Create(hrp, TweenInfo.new(distance / 500, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos)})
+                tween:Play()
+            end
         end
-        task.wait() -- Chạy liên tục tốc độ cao
+        task.wait(0.2) -- Giữ nguyên delay quét nhanh 0.2s
     end
 end)
 
--- // 3. TÍNH NĂNG CŨ: SIÊU TỐC FIRE PROXIMITYPROMPT (TÁCH RIÊNG)
-task.spawn(function()
-    while true do
-        if allowRejoin then
-            pcall(function()
-                local target = game:GetService("Workspace")["Door2"]["ProximityPrompt2"]
-                if target then
-                    fireproximityprompt(target)
-                end
-            end)
-        end
-        task.wait()
-    end
-end)
-
--- // Logic Rejoin (Khi bị lỗi mạng/server)
+-- // Logic Rejoin
 local function RejoinLogic()
     if not allowRejoin then return end
     if game.PrivateServerId ~= "" then
@@ -106,15 +98,14 @@ GuiService.ErrorMessageChanged:Connect(function()
     end
 end)
 
--- // Logic Đếm ngược Rejoin (8.1s)
+-- // Đếm ngược Rejoin (Giữ nguyên 8.1s)
 local timeLeft = 8.1
-task.spawn(function()
-    while timeLeft > 0 do
-        debugLabel.Text = string.format("Chuẩn bị Kick trong: %.1fS", timeLeft)
-        task.wait(0.1)
-        timeLeft = timeLeft - 0.1
-    end
-    if allowRejoin then
-        player:Kick("Đang Rejoin để farm Points tiếp...")
-    end
-end)
+while timeLeft > 0 do
+    debugLabel.Text = string.format("Chuẩn bị Kick trong: %.1fS", timeLeft)
+    task.wait(0.1)
+    timeLeft = timeLeft - 0.1
+end
+
+if allowRejoin then
+    player:Kick("Đang Rejoin để farm Points tiếp...")
+end
