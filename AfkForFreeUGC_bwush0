@@ -68,24 +68,23 @@ task.spawn(function()
             tween:Play()
             tween.Completed:Wait()
         elseif door2 then
-            -- NẾU KHÔNG CÓ STAGE 10: Đi Door2 (Tốc độ 50) và SPAM liên tục
-            local distance = (hrp.Position - door2.Position).Magnitude
+            -- NẾU KHÔNG CÓ STAGE 10: Đi tới tọa độ chỉ định (Tốc độ 50)
+            local targetPos = Vector3.new(41338, -72, -21)
+            local distance = (hrp.Position - targetPos).Magnitude
             
-            -- Chỉ di chuyển tới Door2 nếu ở xa
             if distance > 4 then
-                local tween = TweenService:Create(hrp, TweenInfo.new(distance / 50, Enum.EasingStyle.Linear), {CFrame = door2.CFrame})
+                local tween = TweenService:Create(hrp, TweenInfo.new(distance / 50, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos)})
                 tween:Play()
-                -- Lưu ý: Không dùng .Wait() ở đây để vòng lặp có thể check Stage 10 liên tục
             end
 
-            -- Spam ProximityPrompt
+            -- Quét GetDescendants và Spam ProximityPrompt
             for _, v in pairs(door2:GetDescendants()) do
                 if v:IsA("ProximityPrompt") then
                     fireproximityprompt(v)
                 end
             end
         end
-        task.wait(0.2) -- Quét nhanh để nhận diện Stage 10 ngay lập tức
+        task.wait(0.2) -- Giữ nguyên delay quét nhanh
     end
 end)
 
