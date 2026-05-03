@@ -1,5 +1,5 @@
-if getgenv().AfkForFreeUGC_bwush then return end
-getgenv().AfkForFreeUGC_bwush = true
+if getgenv().AfkForFreeUGC_bwush1 then return end
+getgenv().AfkForFreeUGC_bwush1 = true
 
 -- // Giao diện Debug
 local screenGui = Instance.new("ScreenGui")
@@ -19,7 +19,7 @@ debugLabel.Parent = screenGui
 
 -- // Biến cấu hình
 local QueueOnTeleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
-local SCRIPT_URL = "https://raw.githubusercontent.com/Hi2983488r93993/RobloxUGC_Scripts/refs/heads/main/AfkForFreeUGC_bwush0"
+local SCRIPT_URL = "https://raw.githubusercontent.com/Hi2983488r93993/RobloxUGC_Scripts/refs/heads/main/AfkForFreeUGC_bwush"
 local allowRejoin = true 
 
 -- // Hỗ trợ Rejoin khi đổi Server
@@ -60,6 +60,7 @@ task.spawn(function()
         
         local stage10 = workspace:FindFirstChild("obby") and workspace.obby:FindFirstChild("Stages") and workspace.obby.Stages:FindFirstChild("Stage 10")
         local door2 = workspace:FindFirstChild("Door2")
+        local prox2 = door2 and door2:FindFirstChild("ProximityPrompt2")
 
         if stage10 then
             -- ƯU TIÊN SỐ 1: Stage 10 (Tốc độ 200)
@@ -77,14 +78,22 @@ task.spawn(function()
                 tween:Play()
             end
 
-            -- Quét GetDescendants và Spam ProximityPrompt
-            for _, v in pairs(door2:GetDescendants()) do
-                if v:IsA("ProximityPrompt") then
-                    fireproximityprompt(v)
+            -- Loop firetouchinterest vào ProximityPrompt2 (hoặc Part chứa nó)
+            if prox2 then
+                -- Nếu prox2 là ProximityPrompt, ta fire nó. 
+                -- Nếu bạn muốn dùng firetouchinterest, thường sẽ tác động vào Parent của nó (Part)
+                fireproximityprompt(prox2) 
+                
+                -- Theo yêu cầu firetouchinterest liên tục:
+                local touchPart = prox2:IsA("BasePart") and prox2 or prox2.Parent
+                if touchPart and touchPart:IsA("BasePart") then
+                    firetouchinterest(hrp, touchPart, 0)
+                    task.wait()
+                    firetouchinterest(hrp, touchPart, 1)
                 end
             end
         end
-        task.wait(0.2) -- Giữ nguyên delay quét nhanh
+        task.wait(0.2)
     end
 end)
 
