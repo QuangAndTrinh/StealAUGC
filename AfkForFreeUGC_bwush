@@ -1,5 +1,5 @@
-if getgenv().AfkForFreeUGC_bwush then return end
-getgenv().AfkForFreeUGC_bwush = true
+if getgenv().AfkForFreeUGC_bwush1 then return end
+getgenv().AfkForFreeUGC_bwush1 = true
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "DebugCountdown"
@@ -17,7 +17,7 @@ debugLabel.Font = Enum.Font.Code
 debugLabel.Parent = screenGui
 
 local QueueOnTeleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
-local SCRIPT_URL = "https://raw.githubusercontent.com/Hi2983488r93993/RobloxUGC_Scripts/refs/heads/main/AfkForFreeUGC_bwush0"
+local SCRIPT_URL = "https://raw.githubusercontent.com/Hi2983488r93993/RobloxUGC_Scripts/refs/heads/main/AfkForFreeUGC_bwush"
 local allowRejoin = true 
 
 pcall(function()
@@ -46,54 +46,48 @@ end
 CheckServerSecurity()
 Players.PlayerAdded:Connect(CheckServerSecurity)
 
--- Luồng logic chính đã thay đổi theo yêu cầu của bạn
 task.spawn(function()
     if not allowRejoin then return end
     
     while true do
         local character = player.Character or player.CharacterAdded:Wait()
         local hrp = character:WaitForChild("HumanoidRootPart")
-        local humanoid = character:WaitForChild("Humanoid")
         
+        -- QUÉT LIÊN TỤC: Tìm Stage 10
         local stage10 = workspace:FindFirstChild("obby") and workspace.obby:FindFirstChild("Stages") and workspace.obby.Stages:FindFirstChild("Stage 10")
 
         if stage10 then
-            -- Ưu tiên bay tới Stage 10
+            -- NẾU THẤY STAGE 10: Ưu tiên Tween tới ngay
             local distance = (hrp.Position - stage10.Position).Magnitude
             local tween = TweenService:Create(hrp, TweenInfo.new(distance / 200, Enum.EasingStyle.Linear), {CFrame = stage10.CFrame})
             tween:Play()
             tween.Completed:Wait()
         else
-            -- Thay thế Health = 0 bằng logic mới của bạn
-            local a = game:GetService("TweenService")
-            local b = hrp -- Sử dụng hrp đã định nghĩa ở trên
-            local c = CFrame.new(41338, -71, -21)
-            local d = 200
-            local e = (b.Position - c.Position).Magnitude
-            local f = a:Create(b, TweenInfo.new(e / d, Enum.EasingStyle.Linear), {CFrame = c})
-            f:Play()
-            f.Completed:Wait()
+            -- NẾU KHÔNG THẤY: Chạy logic tọa độ và ProximityPrompt (không dùng vòng lặp vô hạn ở đây để có thể quay lại check Stage 10)
+            local targetCFrame = CFrame.new(41338, -71, -21)
+            local distance = (hrp.Position - targetCFrame.Position).Magnitude
+            local tween = TweenService:Create(hrp, TweenInfo.new(distance / 200, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
+            tween:Play()
+            tween.Completed:Wait()
 
-            -- Vòng lặp Spam ProximityPrompt
-            while true do 
-                local g = nil
-                local h = 30
-                for i, j in pairs(workspace:GetDescendants()) do 
-                    if j:IsA("ProximityPrompt") then 
-                        local k = (b.Position - (j.Parent:IsA("BasePart") and j.Parent.Position or j.Parent:GetPivot().Position)).Magnitude
-                        if k < h then 
-                            h = k
-                            g = j 
-                        end 
-                    end 
+            -- Quét nhanh ProximityPrompt 1 lần mỗi chu kỳ nếu đang ở tọa độ này
+            local closestPrompt = nil
+            local minDistance = 30
+            for _, item in pairs(workspace:GetDescendants()) do
+                if item:IsA("ProximityPrompt") then
+                    local promptPos = item.Parent:IsA("BasePart") and item.Parent.Position or item.Parent:GetPivot().Position
+                    local dist = (hrp.Position - promptPos).Magnitude
+                    if dist < minDistance then
+                        minDistance = dist
+                        closestPrompt = item
+                    end
                 end
-                if g then 
-                    fireproximityprompt(g)
-                end
-                task.wait(0.1)
+            end
+            if closestPrompt then
+                fireproximityprompt(closestPrompt)
             end
         end
-        task.wait(0.2)
+        task.wait(0.1) -- Delay nhỏ để vòng lặp quét liên tục mà không gây lag
     end
 end)
 
