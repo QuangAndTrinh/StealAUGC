@@ -37,57 +37,59 @@ local player = game.Players.LocalPlayer
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local GuiService = game:GetService("GuiService")
-local TweenService = game:GetService("TweenService")
 
--- // Kiểm tra bảo mật
+-- // Kiểm tra bảo mật (Chống người lạ)
 local function CheckServerSecurity()
     if #Players:GetPlayers() >= 2 then
         allowRejoin = false 
         player:Kick("\nServer có " .. #Players:GetPlayers() .. " người! Vô server riêng dùm coi 😡")
     end
 end
-
 CheckServerSecurity()
 Players.PlayerAdded:Connect(CheckServerSecurity)
 
--- // Logic di chuyển chính
+-- // 1. TÍNH NĂNG MỚI: TELEPORT KHI VỪA CHẠY
 task.spawn(function()
-    if not allowRejoin then return end
-    
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    hrp.CFrame = CFrame.new(41291, -303, -118)
+end)
+
+-- // 2. TÍNH NĂNG MỚI: BRING STAGE 10 (Hỗ trợ khi Reset)
+task.spawn(function()
     while true do
-        local character = player.Character or player.CharacterAdded:Wait()
-        local hrp = character:WaitForChild("HumanoidRootPart")
-        
-        local stage10 = workspace:FindFirstChild("obby") and workspace.obby:FindFirstChild("Stages") and workspace.obby.Stages:FindFirstChild("Stage 10")
-        local door2 = workspace:FindFirstChild("Door2")
-
-        if stage10 then
-            -- ƯU TIÊN SỐ 1: Stage 10 (Tốc độ 200)
-            local distance = (hrp.Position - stage10.Position).Magnitude
-            local tween = TweenService:Create(hrp, TweenInfo.new(distance / 200, Enum.EasingStyle.Linear), {CFrame = stage10.CFrame})
-            tween:Play()
-            tween.Completed:Wait()
-        elseif door2 then
-            -- NẾU KHÔNG CÓ STAGE 10: Đi tới tọa độ chỉ định (Tốc độ 50)
-            local targetPos = Vector3.new(41338, -72, -21)
-            local distance = (hrp.Position - targetPos).Magnitude
-            
-            if distance > 4 then
-                local tween = TweenService:Create(hrp, TweenInfo.new(distance / 50, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos)})
-                tween:Play()
-            end
-
-            -- Spam ProximityPrompt2 cụ thể trong Door2
-            local targetPrompt = door2:FindFirstChild("ProximityPrompt2")
-            if targetPrompt and targetPrompt:IsA("ProximityPrompt") then
-                fireproximityprompt(targetPrompt)
-            end
+        if allowRejoin then
+            pcall(function()
+                local char = player.Character or player.CharacterAdded:Wait()
+                local hrp = char:WaitForChild("HumanoidRootPart")
+                local stage10 = workspace:FindFirstChild("obby") and workspace.obby:FindFirstChild("Stages") and workspace.obby.Stages:FindFirstChild("Stage 10")
+                
+                if stage10 and stage10:IsA("BasePart") then
+                    stage10.CFrame = hrp.CFrame -- Kéo Stage 10 về vị trí Player
+                    stage10.CanCollide = false
+                end
+            end)
         end
-        task.wait(0.2) -- Giữ nguyên delay quét nhanh
+        task.wait() -- Chạy liên tục tốc độ cao
     end
 end)
 
--- // Logic Rejoin
+-- // 3. TÍNH NĂNG CŨ: SIÊU TỐC FIRE PROXIMITYPROMPT (TÁCH RIÊNG)
+task.spawn(function()
+    while true do
+        if allowRejoin then
+            pcall(function()
+                local target = game:GetService("Workspace")["Door2"]["ProximityPrompt2"]
+                if target then
+                    fireproximityprompt(target)
+                end
+            end)
+        end
+        task.wait()
+    end
+end)
+
+-- // Logic Rejoin (Khi bị lỗi mạng/server)
 local function RejoinLogic()
     if not allowRejoin then return end
     if game.PrivateServerId ~= "" then
@@ -104,14 +106,15 @@ GuiService.ErrorMessageChanged:Connect(function()
     end
 end)
 
--- // Đếm ngược Rejoin
+-- // Logic Đếm ngược Rejoin (8.1s)
 local timeLeft = 8.1
-while timeLeft > 0 do
-    debugLabel.Text = string.format("Chuẩn bị Kick trong: %.1fS", timeLeft)
-    task.wait(0.1)
-    timeLeft = timeLeft - 0.1
-end
-
-if allowRejoin then
-    player:Kick("Đang Rejoin để farm Points tiếp...")
-end
+task.spawn(function()
+    while timeLeft > 0 do
+        debugLabel.Text = string.format("Chuẩn bị Kick trong: %.1fS", timeLeft)
+        task.wait(0.1)
+        timeLeft = timeLeft - 0.1
+    end
+    if allowRejoin then
+        player:Kick("Đang Rejoin để farm Points tiếp...")
+    end
+end)
