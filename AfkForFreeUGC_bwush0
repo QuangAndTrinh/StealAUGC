@@ -58,7 +58,7 @@ task.spawn(function()
 
         if stage10 then
             local distance = (hrp.Position - stage10.Position).Magnitude
-            local tween = TweenService:Create(hrp, TweenInfo.new(distance / 200, Enum.EasingStyle.Linear), {CFrame = stage10.CFrame})
+            local tween = TweenService:Create(hrp, TweenInfo.new(distance / 500, Enum.EasingStyle.Linear), {CFrame = stage10.CFrame})
             tween:Play()
             tween.Completed:Wait()
         else
@@ -85,7 +85,7 @@ GuiService.ErrorMessageChanged:Connect(function()
     end
 end)
 
-local timeLeft = 8.1
+local timeLeft = 7.1
 while timeLeft > 0 do
     debugLabel.Text = string.format("Chuẩn bị Kick trong: %.1fS", timeLeft)
     task.wait(0.1)
