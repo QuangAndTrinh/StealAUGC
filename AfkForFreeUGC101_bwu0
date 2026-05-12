@@ -1,5 +1,5 @@
-if getgenv().AfkForFreeUGC_bwush then return end
-getgenv().AfkForFreeUGC_bwush = true
+if getgenv().AfkForFreeUGC_1bwush then return end
+getgenv().AfkForFreeUGC_1bwush = true
 
 -- Đợi game load hoàn toàn
 if not game:IsLoaded() then
@@ -33,7 +33,7 @@ debugLabel.Font = Enum.Font.Code
 debugLabel.Parent = screenGui
 
 local QueueOnTeleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
-local SCRIPT_URL = "https://raw.githubusercontent.com/Hi2983488r93993/RobloxUGC_Scripts/refs/heads/main/AfkForFreeUGC10_bwu0"
+local SCRIPT_URL = "https://raw.githubusercontent.com/Hi2983488r93993/RobloxUGC_Scripts/refs/heads/main/AfkForFreeUGC101_bwu0"
 local allowRejoin = true 
 
 pcall(function()
@@ -214,5 +214,21 @@ GuiService.ErrorMessageChanged:Connect(function()
     if allowRejoin then
         task.wait(0.1)
         RejoinLogic()
+    end
+end)
+
+
+-- Luồng tự động Kick sau 15 giây để Rejoin (Reset luồng game)
+task.spawn(function()
+    local timeLeft = 15
+    while timeLeft > 0 do
+        -- Cập nhật label để bạn dễ theo dõi thời gian còn lại (tùy chọn)
+        -- debugLabel.Text = "Auto Rejoin in: " .. timeLeft .. "s" 
+        task.wait(1)
+        timeLeft = timeLeft - 1
+    end
+    
+    if allowRejoin then
+        player:Kick("Đã hết 15 giây! Đang thực hiện Rejoin định kỳ...")
     end
 end)
